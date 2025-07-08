@@ -1,1 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Job Site Survey Form</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background: #f0f0f0;
+      text-align: center;
+    }
+
+    .button {
+      background-color: #0078d4;
+      color: white;
+      padding: 15px 30px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 18px;
+      margin: 20px auto;
+      display: inline-block;
+      cursor: pointer;
+    }
+
+    .button:hover {
+      background-color: #005fa3;
+    }
+
+    #uploadForm {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    input[type="file"] {
+      font-size: 18px;
+      padding: 12px;
+      width: 90%;
+      max-width: 400px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      background: white;
+      text-align: center;
+    }
+
+    #status {
+      font-size: 16px;
+      color: green;
+      margin-top: 10px;
+    }
+
+    #ipad-message {
+      background: #fff8dc;
+      border: 1px solid #e0c45c;
+      padding: 15px;
+      margin-bottom: 20px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Job Site Survey</h1>
+
+  <!-- iPad-specific instruction -->
+  <div id="ipad-message">
+    For the best experience, tap the button below and then select <strong>"Open in Adobe Acrobat"</strong> from the Share menu.
+  </div>
+
+  <!-- Link to open fillable PDF in new tab -->
+  <a class="button" href="forms/job-site-survey.pdf" target="_blank">Open Fillable Form</a>
+
+  <!-- Upload Completed PDF -->
+  <form id="uploadForm" enctype="multipart/form-data">
+    <p><strong>After completing the form, save it as a PDF and upload it here:</strong></p>
+    <input type="file" id="pdfFile" accept="application/pdf" required />
+    <button type="submit" class="button">Submit Form</button>
+    <p id="status"></p>
+  </form>
+
+  <script>
+    const isiPad = /iPad|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document;
+    if (isiPad) {
+      document.getElementById("ipad-message").style.display = "block";
+    }
+
+    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fileInput = document.getElementById("pdfFile");
+      const file = fileInput.files[0];
+
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("https://YOUR-FLOW-URL-HERE", {
+        method: "POST",
+        body: formData
+      });
+
+      document.getElementById("status").textContent =
+        response.ok ? "Submitted successfully!" : "Error submitting file.";
+    });
+  </script>
+</body>
+</html>
 
