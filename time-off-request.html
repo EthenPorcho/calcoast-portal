@@ -23,15 +23,22 @@
     .button:hover {
       background-color: #005fa3;
     }
-    input, button {
-      padding: 10px;
-      font-size: 16px;
-      margin: 10px;
+    #ipad-message {
+      background: #fff8dc;
+      border: 1px solid #e0c45c;
+      padding: 15px;
+      margin-bottom: 20px;
+      display: none;
     }
   </style>
 </head>
 <body>
   <h1>Time Off Request</h1>
+
+  <!-- iPad-specific instruction -->
+  <div id="ipad-message">
+    For the best experience, tap the button below and then select <strong>"Open in Adobe Acrobat"</strong> from the Share menu.
+  </div>
 
   <!-- Link to open fillable PDF in new tab -->
   <a class="button" href="forms/time-off-request.pdf" target="_blank">Open Fillable Form</a>
@@ -46,6 +53,13 @@
   </form>
 
   <script>
+    // Detect iPad or iOS device
+    const isiPad = /iPad|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document;
+    if (isiPad) {
+      document.getElementById("ipad-message").style.display = "block";
+    }
+
+    // Handle form submission
     document.getElementById("uploadForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const fileInput = document.getElementById("pdfFile");
