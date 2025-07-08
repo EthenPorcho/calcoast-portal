@@ -10,6 +10,7 @@
       background: #f0f0f0;
       text-align: center;
     }
+
     .button {
       background-color: #0078d4;
       color: white;
@@ -17,12 +18,40 @@
       text-decoration: none;
       border-radius: 8px;
       font-size: 18px;
-      margin-bottom: 30px;
+      margin: 20px auto;
       display: inline-block;
+      cursor: pointer;
     }
+
     .button:hover {
       background-color: #005fa3;
     }
+
+    #uploadForm {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    input[type="file"] {
+      font-size: 18px;
+      padding: 12px;
+      width: 90%;
+      max-width: 400px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      background: white;
+      text-align: center;
+    }
+
+    #status {
+      font-size: 16px;
+      color: green;
+      margin-top: 10px;
+    }
+
     #ipad-message {
       background: #fff8dc;
       border: 1px solid #e0c45c;
@@ -47,19 +76,18 @@
   <form id="uploadForm" enctype="multipart/form-data">
     <p><strong>After completing the form, save it as a PDF and upload it here:</strong></p>
     <input type="file" id="pdfFile" accept="application/pdf" required />
-    <br>
     <button type="submit" class="button">Submit Form</button>
     <p id="status"></p>
   </form>
 
   <script>
-    // Detect iPad or iOS device
+    // Detect iPad or iOS with touch
     const isiPad = /iPad|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document;
     if (isiPad) {
       document.getElementById("ipad-message").style.display = "block";
     }
 
-    // Handle form submission
+    // Upload handler
     document.getElementById("uploadForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const fileInput = document.getElementById("pdfFile");
