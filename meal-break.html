@@ -100,7 +100,11 @@
       }
 
       const formData = new FormData();
-      formData.append("file", file);
+      const techName = localStorage.getItem("techName") || "Unknown Tech";
+      const customFileName = `Meal Break Form - ${techName}.pdf`;
+
+      formData.append("file", file, customFileName); // includes custom file name
+      formData.append("fileName", customFileName);   // optional: send explicitly
 
       try {
         const response = await fetch("https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/f6e61e2496fc48e683947ae5bb0a782f/triggers/manual/paths/invoke/?api-version=1&tenantId=tId&environmentName=Default-3afc8fb9-498b-4895-ac67-ceb1617a23ce&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=_1q3BRY4Q2dWYee7EnSuGedo49eCK17deW1Bh0fTebo", {
