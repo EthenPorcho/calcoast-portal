@@ -105,7 +105,7 @@
 
 
     const formData = new FormData();
-    formData.append("file", file, customFileName); // assign custom filename to file
+    formData.append("fileName", rawFileName); // not encoded
     formData.append("fileName", customFileName);   // send the name separately too
 
     try {
