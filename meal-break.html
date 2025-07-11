@@ -100,13 +100,13 @@
     }
 
     const techName = localStorage.getItem("techName") || "Unknown Tech";
-const fileInput = document.getElementById("pdfFile");
-const file = fileInput.files[0];
-const fileName = `Meal Break Form - ${techName}.pdf`;
+    const fileInput = document.getElementById("pdfFile");
+    const file = fileInput.files[0];
+    const fileName = `Meal Break Form - ${techName}.pdf`;
 
-const formData = new FormData();
-formData.append("file", file, fileName);       // attach file with name
-formData.append("fileName", fileName);         // attach fileName field too
+    const formData = new FormData();
+    formData.append("file", file, fileName);       // attach file with name
+    formData.append("fileName", fileName);         // attach fileName field too
 
 
 
