@@ -100,7 +100,9 @@
     }
 
     const techName = localStorage.getItem("techName") || "Unknown Tech";
-    const customFileName = `Meal Break Form - ${techName}.pdf`;
+   const rawFileName = `Meal Break Form - ${techName}.pdf`;
+    const customFileName = encodeURIComponent(rawFileName);
+
 
     const formData = new FormData();
     formData.append("file", file, customFileName); // assign custom filename to file
