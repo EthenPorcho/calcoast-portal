@@ -1,1 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Install to Service Form</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      text-align: center;
+      padding: 20px;
+    }
+    #greeting {
+      font-size: 20px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .button {
+      background-color: #0078d4;
+      color: white;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    .button:hover {
+      background-color: #005fa3;
+    }
+    input[type="file"] {
+      font-size: 16px;
+      padding: 10px;
+      margin-top: 15px;
+    }
+    #status {
+      margin-top: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Greeting + redirect if not logged in -->
+  <div id="greeting"></div>
+
+  <h1>Install to Service Form</h1>
+  <p>After completing the Install form PDF, save it and upload it below:</p>
+  <input type="file" id="pdfFile" accept="application/pdf" />
+  <br />
+  <button class="button" id="submitBtn">Submit Form</button>
+  <p id="status"></p>
+
+  <script>
+    // 1) Check login
+    const techName = localStorage.getItem("techName");
+    if (!techName) {
+      window.location.href = "login.html";
+      throw new Error("No techName in localStorage");
+    }
+    // 2) Show greeting
+    document.getElementById("greeting").textContent = `Hello, ${techName}!`;
+
+    // 3) Upload handler using JSON/base64
+    document.getElementById("submitBtn").addEventListener("click", async () => {
+      const fileInput = document.getElementById("pdfFile");
+      const file = fileInput.files[0];
+      const status = document.getElementById("status");
+
+      if (!file) {
+        status.textContent = "Please select a PDF first.";
+        status.style.color = "red";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const base64 = reader.result.split(",")[1];
+
+        // Build payload
+        const payload = {
+          techName: techName,
+          fileContent: base64
+        };
+
+        // 🔥 Replace with your Power Automate HTTP-trigger URL:
+        const flowUrl = "https://<your-flow-endpoint>/installToService?api-version=1.0&code=<your-function-key>";
+
+        try {
+          const resp = await fetch(flowUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const text = await resp.text();
+
+          if (resp.ok) {
+            status.textContent = "✅ Form submitted successfully!";
+            status.style.color = "green";
+            fileInput.value = "";
+          } else {
+            status.textContent = `❌ ${resp.status}: ${text}`;
+            status.style.color = "red";
+          }
+          console.log("Response:", resp.status, text);
+        } catch (err) {
+          console.error("Network/CORS error:", err);
+          status.textContent = `❌ Network error: ${err.message}`;
+          status.style.color = "red";
+        }
+      };
+      reader.onerror = e => {
+        status.textContent = "❌ Failed to read file.";
+        status.style.color = "red";
+        console.error(e);
+      };
+    });
+  </script>
+</body>
+</html>
 
