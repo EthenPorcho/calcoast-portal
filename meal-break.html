@@ -10,7 +10,6 @@
       background: #f0f0f0;
       text-align: center;
     }
-
     .button {
       background-color: #0078d4;
       color: white;
@@ -22,11 +21,9 @@
       display: inline-block;
       cursor: pointer;
     }
-
     .button:hover {
       background-color: #005fa3;
     }
-
     #uploadForm {
       display: flex;
       flex-direction: column;
@@ -34,7 +31,6 @@
       gap: 15px;
       margin-top: 30px;
     }
-
     input[type="file"] {
       font-size: 18px;
       padding: 12px;
@@ -45,12 +41,10 @@
       background: white;
       text-align: center;
     }
-
     #status {
       font-size: 16px;
       margin-top: 10px;
     }
-
     #ipad-message {
       background: #fff8dc;
       border: 1px solid #e0c45c;
@@ -63,16 +57,13 @@
 <body>
   <h1>Meal Time Break Form</h1>
 
-  <!-- iPad instruction -->
   <div id="ipad-message">
     For best results, tap the button below and open the form in Adobe Acrobat.
   </div>
 
-  <!-- Link to the fillable PDF -->
   <a class="button" href="forms/meal-break-form.pdf" target="_blank">Open Fillable Form</a>
 
-  <!-- Upload form -->
-  <form id="uploadForm" enctype="multipart/form-data">
+  <form id="uploadForm">
     <p><strong>After completing the form, save it as a PDF and upload it here:</strong></p>
     <input type="file" id="pdfFile" accept="application/pdf" required />
     <button type="submit" class="button">Submit Form</button>
@@ -80,13 +71,11 @@
   </form>
 
   <script>
-    // Show message for iPads
+    // Show iPad tip
     const isiPad = /iPad|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document;
-    if (isiPad) {
-      document.getElementById("ipad-message").style.display = "block";
-    }
+    if (isiPad) document.getElementById("ipad-message").style.display = "block";
 
-    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+    document.getElementById("uploadForm").addEventListener("submit", async e => {
       e.preventDefault();
 
       const fileInput = document.getElementById("pdfFile");
@@ -94,44 +83,48 @@
       const status = document.getElementById("status");
 
       if (!file) {
-        status.textContent = "Please select a file before submitting.";
+        status.textContent = "Please select a file.";
         status.style.color = "red";
         return;
       }
 
-      // grab techName and build the Flow URL
-      const techName = localStorage.getItem("techName") || "Unknown Tech";
-      const flowUrl = "https://…/invoke/?api-version=1&tenantId=…&sp=…&sv=1.0&sig=…";
-      const urlWithName = `${flowUrl}&techName=${encodeURIComponent(techName)}`;
+      // read as Base64
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const base64 = reader.result.split(',')[1];
+        const techName = localStorage.getItem("techName") || "Unknown Tech";
 
-      // build the PDF filename
-      const fileName = `Meal Break Form - ${techName}.pdf`;
+        // your HTTP‑trigger endpoint
+        const flowUrl = "https://.../invoke?api-version=1&tenantId=...&environmentName=...&sp=...&sv=1.0&sig=...";
+        
+        // build JSON payload
+        const payload = {
+          techName: techName,
+          fileContent: base64
+        };
 
-      // assemble multipart payload
-      const formData = new FormData();
-      formData.append("file", file, fileName);
-      formData.append("fileName", fileName);
-      formData.append("techName", techName);
+        try {
+          const resp = await fetch(flowUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
 
-      try {
-        const response = await fetch(urlWithName, {
-          method: "POST",
-          body: formData
-        });
-
-        if (response.ok) {
-          status.textContent = "✅ Form submitted successfully!";
-          status.style.color = "green";
-          fileInput.value = "";
-        } else {
-          status.textContent = "❌ Error submitting form. Please try again.";
+          if (resp.ok) {
+            status.textContent = "✅ Form submitted!";
+            status.style.color = "green";
+            fileInput.value = "";
+          } else {
+            status.textContent = "❌ Submission error.";
+            status.style.color = "red";
+          }
+        } catch (err) {
+          console.error(err);
+          status.textContent = "❌ Network failure.";
           status.style.color = "red";
         }
-      } catch (error) {
-        console.error(error);
-        status.textContent = "❌ Submission failed. Check your connection.";
-        status.style.color = "red";
-      }
+      };
     });
   </script>
 </body>
