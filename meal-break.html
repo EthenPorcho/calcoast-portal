@@ -1,108 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Meal Time Break Form</title>
   <style>
     body {
       font-family: sans-serif;
-      padding: 20px;
       background: #f0f0f0;
       text-align: center;
+      padding: 20px;
+    }
+    #greeting {
+      font-size: 20px;
+      margin-bottom: 20px;
+      text-align: left;
     }
     .button {
       background-color: #0078d4;
       color: white;
       padding: 15px 30px;
-      text-decoration: none;
+      border: none;
       border-radius: 8px;
       font-size: 18px;
-      margin: 20px auto;
-      display: inline-block;
       cursor: pointer;
+      margin: 10px 0;
     }
     .button:hover {
       background-color: #005fa3;
     }
-    #uploadForm {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 15px;
-      margin-top: 30px;
-    }
     input[type="file"] {
-      font-size: 18px;
-      padding: 12px;
-      width: 90%;
-      max-width: 400px;
-      border: 2px solid #ccc;
-      border-radius: 8px;
-      background: white;
-      text-align: center;
+      font-size: 16px;
+      padding: 10px;
+      margin-top: 15px;
     }
     #status {
-      font-size: 16px;
       margin-top: 10px;
-    }
-    #ipad-message {
-      background: #fff8dc;
-      border: 1px solid #e0c45c;
-      padding: 15px;
-      margin-bottom: 20px;
-      display: none;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
+  <!-- Greeting + redirect if not logged in -->
+  <div id="greeting"></div>
+
   <h1>Meal Time Break Form</h1>
-
-  <div id="ipad-message">
-    For best results, tap the button below and open the form in Adobe Acrobat.
-  </div>
-
-  <a class="button" href="forms/meal-break-form.pdf" target="_blank">Open Fillable Form</a>
-
-  <form id="uploadForm">
-    <p><strong>After completing the form, save it as a PDF and upload it here:</strong></p>
-    <input type="file" id="pdfFile" accept="application/pdf" required />
-    <button type="submit" class="button">Submit Form</button>
-    <p id="status"></p>
-  </form>
+  <p>After filling out the PDF, save it and upload it below:</p>
+  <input type="file" id="pdfFile" accept="application/pdf" />
+  <br>
+  <button class="button" id="submitBtn">Submit Form</button>
+  <p id="status"></p>
 
   <script>
-    // Show iPad tip
-    const isiPad = /iPad|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document;
-    if (isiPad) document.getElementById("ipad-message").style.display = "block";
+    // 1) Ensure techName is set, otherwise bounce to login:
+    const techName = localStorage.getItem("techName");
+    if (!techName) {
+      window.location.href = "login.html";
+      throw new Error("No techName in localStorage");
+    }
+    // 2) Show greeting
+    document.getElementById("greeting").textContent = `Hello, ${techName}!`;
 
-    document.getElementById("uploadForm").addEventListener("submit", async e => {
-      e.preventDefault();
-
+    // 3) Upload handler using JSON/base64
+    document.getElementById("submitBtn").addEventListener("click", async () => {
       const fileInput = document.getElementById("pdfFile");
       const file = fileInput.files[0];
       const status = document.getElementById("status");
 
       if (!file) {
-        status.textContent = "Please select a file.";
+        status.textContent = "Please select a PDF first.";
         status.style.color = "red";
         return;
       }
 
-      // read as Base64
+      // Read file as Base64
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = async () => {
-        const base64 = reader.result.split(',')[1];
-        const techName = localStorage.getItem("techName") || "Unknown Tech";
+        const base64 = reader.result.split(",")[1];
 
-        // your HTTP‑trigger endpoint
-        const flowUrl = "https://.../invoke?api-version=1&tenantId=...&environmentName=...&sp=...&sv=1.0&sig=...";
-        
-        // build JSON payload
+        // Build payload
         const payload = {
           techName: techName,
           fileContent: base64
         };
+
+        // 🔥 Replace this with your exact Flow HTTP-trigger URL:
+        const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/f6e61e2496fc48e683947ae5bb0a782f/triggers/manual/paths/invoke/?api-version=1&tenantId=tId&environmentId=Default-3afc8fb9-498b-4895-ac67-ceb1617a23ce&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=_1q3BRY4Q2dWYee7EnSuGedo49eCK17deW1Bh0fTebo";
 
         try {
           const resp = await fetch(flowUrl, {
@@ -110,20 +94,27 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
           });
+          const text = await resp.text();
 
           if (resp.ok) {
-            status.textContent = "✅ Form submitted!";
+            status.textContent = "✅ Form submitted successfully!";
             status.style.color = "green";
             fileInput.value = "";
           } else {
-            status.textContent = "❌ Submission error.";
+            status.textContent = `❌ ${resp.status}: ${text}`;
             status.style.color = "red";
           }
+          console.log("Response:", resp.status, text);
         } catch (err) {
-          console.error(err);
-          status.textContent = "❌ Network failure.";
+          console.error("Network/CORS error:", err);
+          status.textContent = `❌ Network error: ${err.message}`;
           status.style.color = "red";
         }
+      };
+      reader.onerror = e => {
+        status.textContent = "❌ Failed to read file.";
+        status.style.color = "red";
+        console.error(e);
       };
     });
   </script>
