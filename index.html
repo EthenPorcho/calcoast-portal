@@ -12,7 +12,6 @@
       padding: 0;
       text-align: center;
     }
-
     header {
       display: flex;
       justify-content: space-between;
@@ -21,30 +20,33 @@
       color: white;
       padding: 15px 25px;
     }
-
     .logo {
       font-size: 24px;
       font-weight: bold;
     }
-
-    .login-button {
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-controls span {
+      font-size: 18px;
+    }
+    .login-button, .logout-button {
       background-color: #ffffff;
       color: #003d66;
       border: none;
       border-radius: 6px;
-      padding: 10px 16px;
+      padding: 8px 14px;
       font-size: 16px;
       cursor: pointer;
     }
-
-    .login-button:hover {
+    .login-button:hover, .logout-button:hover {
       background-color: #e0e0e0;
     }
-
     main {
       padding: 60px 20px;
     }
-
     .button-container {
       display: flex;
       flex-direction: column;
@@ -52,7 +54,6 @@
       max-width: 300px;
       margin: auto;
     }
-
     .nav-button {
       background-color: #0078d4;
       color: white;
@@ -62,17 +63,19 @@
       font-size: 18px;
       transition: background-color 0.3s;
     }
-
     .nav-button:hover {
       background-color: #005fa3;
     }
   </style>
 </head>
 <body>
-
   <header>
     <div class="logo">Cal Coast Refrigeration</div>
-    <button class="login-button" onclick="window.location.href='login.html'">Login</button>
+    <div class="header-controls">
+      <span id="greeting" style="display:none;"></span>
+      <button id="loginButton" class="login-button">Login</button>
+      <button id="logoutButton" class="logout-button" style="display:none;">Logout</button>
+    </div>
   </header>
 
   <main>
@@ -83,5 +86,37 @@
     </div>
   </main>
 
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const techName = localStorage.getItem('techName');
+      const greetingEl = document.getElementById('greeting');
+      const loginBtn = document.getElementById('loginButton');
+      const logoutBtn = document.getElementById('logoutButton');
+
+      if (techName) {
+        // If we have a name, show greeting + logout
+        greetingEl.textContent = `Hello, ${techName}!`;
+        greetingEl.style.display = 'inline';
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline';
+      } else {
+        // No name: redirect to login.html
+        loginBtn.style.display = 'inline';
+        logoutBtn.style.display = 'none';
+        greetingEl.style.display = 'none';
+        return window.location.href = 'login.html';
+      }
+
+      loginBtn.addEventListener('click', () => {
+        // fallback: send them to login page
+        window.location.href = 'login.html';
+      });
+
+      logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('techName');
+        window.location.reload();
+      });
+    });
+  </script>
 </body>
 </html>
