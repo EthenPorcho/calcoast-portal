@@ -92,7 +92,7 @@
         };
 
         // 🔥 Replace with your Power Automate HTTP-trigger URL for Service Invoice:
-        const flowUrl = "https://<your-flow-endpoint>/serviceInvoice?api-version=1.0&code=<your-function-key>";
+        const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/96322b940585446cbb6f3e2a79c0c29a/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=qC5-DzuOKP4Wyj7btvIHX0j9HglUeS_Sty3hrsEZrWs";
 
         try {
           const resp = await fetch(flowUrl, {
