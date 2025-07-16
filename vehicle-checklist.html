@@ -91,7 +91,7 @@
         };
 
         // 🔥 Replace with your Power Automate HTTP-trigger URL for Vehicle Checklist:
-        const flowUrl = "https://<your-flow-endpoint>/vehicleChecklist?api-version=1.0&code=<your-function-key>";
+        const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ecdb97eb919548babb17f0bd016e08ea/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=yPG4nA9v_708IXQ1RpO85-03csJF7JjFCvXzkMdODG0";
 
         try {
           const resp = await fetch(flowUrl, {
