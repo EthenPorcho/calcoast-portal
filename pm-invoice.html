@@ -90,7 +90,7 @@
         };
 
         // 🔥 Replace with your Power Automate HTTP-trigger URL:
-        const flowUrl = "https://<your-flow-endpoint>/pmInvoice?api-version=1.0&code=<your-function-key>";
+        const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/21a88380b33e457f93c5d1f9f8e89ef8/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=R9VigY7olUyTUv9sH6jkCVp_5T5bzavF5KqLMyCRsFA";
 
         try {
           const resp = await fetch(flowUrl, {
