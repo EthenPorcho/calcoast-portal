@@ -90,7 +90,7 @@
         };
 
         // 🔥 Replace with your Power Automate HTTP-trigger URL:
-        const flowUrl = "https://<your-flow-endpoint>/invoke?api-version=1.0&sp=...&sv=1.0&sig=<your-signature>";
+        const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/9df16e4be2374a9f967dceca0be46bbb/triggers/manual/paths/invoke/?api-version=1&tenantId=tId&environmentId=Default-3afc8fb9-498b-4895-ac67-ceb1617a23ce&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=uNTYykstCGyVMXL7UQn9umZ0QFc-9i9wibuuPttoG3I";
 
         try {
           const resp = await fetch(flowUrl, {
