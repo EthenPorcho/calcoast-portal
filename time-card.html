@@ -90,11 +90,7 @@
         };
 
         // Your Power Automate HTTP-trigger URL for Time Card (no placeholders):
-        const flowUrl =
-          "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/" +
-          "powerautomate/automations/direct/workflows/77775ee4a1fe4d4290afe76dd281f4c3/" +
-          "triggers/manual/paths/invoke/?" +
-          "api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=r8GDJVao-rO4yH48F6omL0lX8k8ocM1UzToHMybm50k";
+        const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/77775ee4a1fe4d4290afe76dd281f4c3/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=r8GDJVao-rO4yH48F6omL0lX8k8ocM1UzToHMybm50k";
 
         try {
           const resp = await fetch(flowUrl, {
