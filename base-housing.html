@@ -45,9 +45,9 @@
   <div id="greeting"></div>
 
   <!-- Open the fillable PDF -->
-<a class="button" href="forms/base-housing.pdf" target="_blank">
-  Open Fillable Form
-</a>
+  <a class="button" href="forms/base-housing.pdf" target="_blank">
+    Open Fillable Form
+  </a>
   
   <h1>Base Housing Form</h1>
   <p>After completing the report PDF, save it and upload it below:</p>
@@ -89,7 +89,7 @@
           fileContent: base64
         };
 
-        // 🔥 Replace with your Power Automate HTTP-trigger URL:
+        // 🔥 Your Power Automate HTTP-trigger URL:
         const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/9df16e4be2374a9f967dceca0be46bbb/triggers/manual/paths/invoke/?api-version=1&tenantId=tId&environmentId=Default-3afc8fb9-498b-4895-ac67-ceb1617a23ce&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=uNTYykstCGyVMXL7UQn9umZ0QFc-9i9wibuuPttoG3I";
 
         try {
@@ -124,4 +124,3 @@
   </script>
 </body>
 </html>
-
