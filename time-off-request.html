@@ -99,7 +99,7 @@
 
         console.log("📤 Sending payload:", payload); // DEBUG
 
-        const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/bd3dafb6c5fa44f8866a15994dd73ae2/triggers/manual/paths/invoke/?api-version=1";
+        const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/bd3dafb6c5fa44f8866a15994dd73ae2/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=paaE1WE26Pc653FTJw9i-YPq5Smn-WHSVbLa22qQFVc";
 
         try {
           const resp = await fetch(flowUrl, {
