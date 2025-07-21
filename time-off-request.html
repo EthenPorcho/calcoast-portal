@@ -57,71 +57,77 @@
   <button class="button" id="submitBtn">Submit Form</button>
   <p id="status"></p>
 
-  <script>
-    // 1) Ensure technician is logged in
-    const techName = localStorage.getItem("techName");
-    if (!techName) {
-      window.location.href = "login.html";
-      throw new Error("No techName in localStorage");
+ <script>
+  // 1) Ensure technician is logged in
+  const techName = localStorage.getItem("techName");
+  const techEmail = localStorage.getItem("techEmail");
+  const techPhone = localStorage.getItem("techPhone");
+
+  if (!techName || !techEmail || !techPhone) {
+    window.location.href = "login.html";
+    throw new Error("Missing login info in localStorage");
+  }
+
+  // 2) Show greeting
+  document.getElementById("greeting").textContent = `Hello, ${techName}!`;
+
+  // 3) Upload handler using JSON/base64
+  document.getElementById("submitBtn").addEventListener("click", async () => {
+    const fileInput = document.getElementById("pdfFile");
+    const file = fileInput.files[0];
+    const status = document.getElementById("status");
+
+    if (!file) {
+      status.textContent = "Please select a PDF first.";
+      status.style.color = "red";
+      return;
     }
-    // 2) Show greeting
-    document.getElementById("greeting").textContent = `Hello, ${techName}!`;
 
-    // 3) Upload handler using JSON/base64
-    document.getElementById("submitBtn").addEventListener("click", async () => {
-      const fileInput = document.getElementById("pdfFile");
-      const file = fileInput.files[0];
-      const status = document.getElementById("status");
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const base64 = reader.result.split(",")[1];
 
-      if (!file) {
-        status.textContent = "Please select a PDF first.";
-        status.style.color = "red";
-        return;
-      }
+      // Build payload
+      const payload = {
+        techName: techName,
+        techEmail: techEmail,
+        techPhone: techPhone,
+        fileContent: base64
+      };
 
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = async () => {
-        const base64 = reader.result.split(",")[1];
+      // 🔥 Replace with your actual Power Automate HTTP-trigger URL:
+      const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/54dee0f3579040ae97b7fc2ac8f40ec8/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=fgrEg66mWp86nQNQM5uG5ICSCAun22FS9UvlMdduov0";
 
-        // Build payload
-        const payload = {
-          techName: techName,
-          fileContent: base64
-        };
+      try {
+        const resp = await fetch(flowUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const text = await resp.text();
 
-        // 🔥 Replace with your Power Automate HTTP-trigger URL for Time Off Request:
-        const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/54dee0f3579040ae97b7fc2ac8f40ec8/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=fgrEg66mWp86nQNQM5uG5ICSCAun22FS9UvlMdduov0";
-
-        try {
-          const resp = await fetch(flowUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-          const text = await resp.text();
-
-          if (resp.ok) {
-            status.textContent = "✅ Form submitted successfully!";
-            status.style.color = "green";
-            fileInput.value = "";
-          } else {
-            status.textContent = `❌ ${resp.status}: ${text}`;
-            status.style.color = "red";
-          }
-          console.log("Response:", resp.status, text);
-        } catch (err) {
-          console.error("Network/CORS error:", err);
-          status.textContent = `❌ Network error: ${err.message}`;
+        if (resp.ok) {
+          status.textContent = "✅ Form submitted successfully!";
+          status.style.color = "green";
+          fileInput.value = "";
+        } else {
+          status.textContent = `❌ ${resp.status}: ${text}`;
           status.style.color = "red";
         }
-      };
-      reader.onerror = e => {
-        status.textContent = "❌ Failed to read file.";
+        console.log("Response:", resp.status, text);
+      } catch (err) {
+        console.error("Network/CORS error:", err);
+        status.textContent = `❌ Network error: ${err.message}`;
         status.style.color = "red";
-        console.error(e);
-      };
-    });
-  </script>
+      }
+    };
+    reader.onerror = e => {
+      status.textContent = "❌ Failed to read file.";
+      status.style.color = "red";
+      console.error(e);
+    };
+  });
+</script>
 </body>
 </html>
