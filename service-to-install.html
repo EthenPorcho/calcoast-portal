@@ -91,7 +91,7 @@
         };
 
         // 🔥 Replace with your Power Automate HTTP-trigger URL for Service to Install:
-        const flowUrl = "https://<your-flow-endpoint>/serviceToInstall?api-version=1.0&code=<your-function-key>";
+        const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/f365020c25a14dea808888f5196f2eec/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=zx6OlcByb2DvTn0_FttQj_MaxwJP8EBInqZ7l7TP6uI";
 
         try {
           const resp = await fetch(flowUrl, {
