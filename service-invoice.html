@@ -32,7 +32,12 @@
     input[type="file"] {
       font-size: 16px;
       padding: 10px;
+      margin-top: 10px;
+    }
+    label {
+      display: block;
       margin-top: 15px;
+      font-weight: bold;
     }
     #status {
       margin-top: 10px;
@@ -41,87 +46,91 @@
   </style>
 </head>
 <body>
-  <!-- Greeting + redirect if not logged in -->
   <div id="greeting"></div>
 
-  <!-- Open the fillable PDF -->
-<a class="button" href="forms/service-invoice.pdf" target="_blank">
-  Open Fillable Form
-</a>
+  <a class="button" href="forms/service-invoice.pdf" target="_blank">Open Fillable Form</a>
 
-  
   <h1>Service Invoice Form</h1>
   <p>After completing the service invoice PDF, save it and upload it below:</p>
-  <input type="file" id="pdfFile" accept="application/pdf" />
+
+  <label for="pdfFile">Service Invoice PDF (Required):</label>
+  <input type="file" id="pdfFile" accept="application/pdf" required />
+
+  <label for="unitPhoto">Input Whole Unit Photo (Required):</label>
+  <input type="file" id="unitPhoto" accept="image/*" required />
+
+  <label for="dataPlate">Input Data Plate (Required):</label>
+  <input type="file" id="dataPlate" accept="image/*" required />
+
+  <label for="miscFile">Miscellaneous (Optional):</label>
+  <input type="file" id="miscFile" accept="application/pdf,image/*" />
+
   <br />
   <button class="button" id="submitBtn">Submit Form</button>
   <p id="status"></p>
 
   <script>
-    // 1) Ensure technician is logged in
     const techName = localStorage.getItem("techName");
     if (!techName) {
       window.location.href = "login.html";
       throw new Error("No techName in localStorage");
     }
 
-    // 2) Show greeting
     document.getElementById("greeting").textContent = `Hello, ${techName}!`;
 
-    // 3) Upload handler using JSON/base64
     document.getElementById("submitBtn").addEventListener("click", async () => {
-      const fileInput = document.getElementById("pdfFile");
-      const file = fileInput.files[0];
       const status = document.getElementById("status");
+      const pdfFile = document.getElementById("pdfFile").files[0];
+      const unitPhoto = document.getElementById("unitPhoto").files[0];
+      const dataPlate = document.getElementById("dataPlate").files[0];
+      const miscFile = document.getElementById("miscFile").files[0];
 
-      if (!file) {
-        status.textContent = "Please select a PDF first.";
+      if (!pdfFile || !unitPhoto || !dataPlate) {
+        status.textContent = "❌ All required files must be selected.";
         status.style.color = "red";
         return;
       }
 
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = async () => {
-        const base64 = reader.result.split(",")[1];
+      const toBase64 = file =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(",")[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
 
-        // Build payload
+      try {
         const payload = {
-          techName: techName,
-          fileContent: base64
+          techName,
+          fileContent: await toBase64(pdfFile),
+          unitPhoto: await toBase64(unitPhoto),
+          dataPlate: await toBase64(dataPlate),
+          miscFile: miscFile ? await toBase64(miscFile) : null
         };
 
-        // 🔥 Replace with your Power Automate HTTP-trigger URL for Service Invoice:
         const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/96322b940585446cbb6f3e2a79c0c29a/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=qC5-DzuOKP4Wyj7btvIHX0j9HglUeS_Sty3hrsEZrWs";
 
-        try {
-          const resp = await fetch(flowUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-          const text = await resp.text();
+        const resp = await fetch(flowUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const text = await resp.text();
 
-          if (resp.ok) {
-            status.textContent = "✅ Form submitted successfully!";
-            status.style.color = "green";
-            fileInput.value = "";
-          } else {
-            status.textContent = `❌ ${resp.status}: ${text}`;
-            status.style.color = "red";
-          }
-          console.log("Response:", resp.status, text);
-        } catch (err) {
-          console.error("Network/CORS error:", err);
-          status.textContent = `❌ Network error: ${err.message}`;
+        if (resp.ok) {
+          status.textContent = "✅ Form submitted successfully!";
+          status.style.color = "green";
+          document.querySelectorAll('input[type="file"]').forEach(input => input.value = "");
+        } else {
+          status.textContent = `❌ ${resp.status}: ${text}`;
           status.style.color = "red";
         }
-      };
-      reader.onerror = e => {
-        status.textContent = "❌ Failed to read file.";
+        console.log("Response:", resp.status, text);
+      } catch (err) {
+        console.error("Error:", err);
+        status.textContent = `❌ ${err.message}`;
         status.style.color = "red";
-        console.error(e);
-      };
+      }
     });
   </script>
 </body>
