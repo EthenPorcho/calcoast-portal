@@ -83,17 +83,32 @@ async function imageToPdfBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      const img = new Image();
+      const img = new window.Image();
       img.onload = () => {
         const { jsPDF } = window.jspdf;
+        // Standard US Letter for PDF, or auto-scale to fit image
         const pdf = new jsPDF({
           orientation: img.width > img.height ? "landscape" : "portrait",
-          unit: "px",
-          format: [img.width, img.height]
+          unit: "pt",
+          format: "a4"
         });
-        pdf.addImage(img, 'JPEG', 0, 0, img.width, img.height);
-        const base64DataUri = pdf.output('datauristring'); // returns data:application/pdf;base64,...
-        const base64Pdf = base64DataUri.split(',')[1];     // remove data: prefix
+        // Fit image within PDF page
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        // Calculate width/height while preserving aspect ratio
+        let w = img.width, h = img.height;
+        if (w > pageWidth) {
+          h *= pageWidth / w;
+          w = pageWidth;
+        }
+        if (h > pageHeight) {
+          w *= pageHeight / h;
+          h = pageHeight;
+        }
+        pdf.addImage(img, 'JPEG', 0, 0, w, h);
+        // Use datauristring for export
+        const base64DataUri = pdf.output('datauristring');
+        const base64Pdf = base64DataUri.split(',')[1];
         resolve(base64Pdf);
       };
       img.onerror = reject;
@@ -103,6 +118,7 @@ async function imageToPdfBase64(file) {
     reader.readAsDataURL(file);
   });
 }
+
 
 
     function toBase64(file) {
