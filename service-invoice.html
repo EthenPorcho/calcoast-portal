@@ -2,47 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Service Invoice Form</title>
   <style>
-    body {
-      font-family: sans-serif;
-      background: #f0f0f0;
-      text-align: center;
-      padding: 20px;
-    }
-    #greeting {
-      font-size: 20px;
-      margin-bottom: 20px;
-      text-align: left;
-    }
-    .button {
-      background-color: #0078d4;
-      color: white;
-      padding: 15px 30px;
-      border: none;
-      border-radius: 8px;
-      font-size: 18px;
-      cursor: pointer;
-      margin: 10px 0;
-    }
-    .button:hover {
-      background-color: #005fa3;
-    }
-    input[type="file"] {
-      font-size: 16px;
-      padding: 10px;
-      margin-top: 10px;
-    }
-    label {
-      display: block;
-      margin-top: 15px;
-      font-weight: bold;
-    }
-    #status {
-      margin-top: 10px;
-      font-size: 16px;
-    }
+    body { font-family: sans-serif; background: #f0f0f0; text-align: center; padding: 20px; }
+    #greeting { font-size: 20px; margin-bottom: 20px; text-align: left; }
+    .button { background-color: #0078d4; color: white; padding: 15px 30px; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; margin: 10px 0; }
+    .button:hover { background-color: #005fa3; }
+    input[type="file"] { font-size: 16px; padding: 10px; margin-top: 10px; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    #status { margin-top: 10px; font-size: 16px; }
   </style>
 </head>
 <body>
@@ -70,20 +39,22 @@
   <p id="status"></p>
 
   <script>
-    // Retrieve tech name and require login
     const techName = localStorage.getItem("techName");
     if (!techName) {
       window.location.href = "login.html";
       throw new Error("No techName in localStorage");
     }
-
     document.getElementById("greeting").textContent = `Hello, ${techName}!`;
 
-    // Convert any file to base64 (strip prefix)
-    function toBase64(file) {
+    // Helper to get file base64 and file extension
+    function getFileBase64AndExtension(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onload = () => {
+          const base64 = reader.result.split(',')[1];
+          const extension = file.name.split('.').pop().toLowerCase();
+          resolve({ base64, extension });
+        };
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
@@ -103,17 +74,26 @@
       }
 
       try {
+        const [pdf, unit, data, misc] = await Promise.all([
+          getFileBase64AndExtension(pdfFile),
+          getFileBase64AndExtension(unitPhoto),
+          getFileBase64AndExtension(dataPlate),
+          miscFile ? getFileBase64AndExtension(miscFile) : Promise.resolve({ base64: null, extension: null })
+        ]);
+
         const payload = {
           techName,
-          fileContent: await toBase64(pdfFile),           // PDF as base64
-          unitPhoto: await toBase64(unitPhoto),           // Image as base64
-          dataPlate: await toBase64(dataPlate),           // Image as base64
-          miscFile: miscFile ? await toBase64(miscFile) : null // Image as base64 or null
+          pdfFile: pdf.base64,
+          pdfExt: pdf.extension,
+          unitPhoto: unit.base64,
+          unitPhotoExt: unit.extension,
+          dataPlate: data.base64,
+          dataPlateExt: data.extension,
+          miscFile: misc.base64,
+          miscFileExt: misc.extension
         };
 
-        // ---- SET THIS TO YOUR FLOW ENDPOINT ----
-        const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/96322b940585446cbb6f3e2a79c0c29a/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=qC5-DzuOKP4Wyj7btvIHX0j9HglUeS_Sty3hrsEZrWs";
-
+        const flowUrl = "YOUR_FLOW_URL_HERE"; // replace with actual
         const resp = await fetch(flowUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -139,4 +119,3 @@
   </script>
 </body>
 </html>
-
