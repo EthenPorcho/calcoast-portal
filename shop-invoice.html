@@ -79,35 +79,31 @@
 
     document.getElementById("greeting").textContent = `Hello, ${techName}!`;
 
-    async function imageToPdfBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = async () => {
-          const img = new Image();
-          img.onload = async () => {
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF({
-              orientation: img.width > img.height ? "landscape" : "portrait",
-              unit: "px",
-              format: [img.width, img.height]
-            });
-            pdf.addImage(img, 'JPEG', 0, 0, img.width, img.height);
-            const pdfBlob = pdf.output('blob');
-            const pdfReader = new FileReader();
-            pdfReader.onload = () => {
-              const base64Pdf = pdfReader.result.split(',')[1];
-              resolve(base64Pdf);
-            };
-            pdfReader.onerror = reject;
-            pdfReader.readAsDataURL(pdfBlob);
-          };
-          img.onerror = reject;
-          img.src = reader.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
+async function imageToPdfBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: img.width > img.height ? "landscape" : "portrait",
+          unit: "px",
+          format: [img.width, img.height]
+        });
+        pdf.addImage(img, 'JPEG', 0, 0, img.width, img.height);
+        const base64DataUri = pdf.output('datauristring'); // returns data:application/pdf;base64,...
+        const base64Pdf = base64DataUri.split(',')[1];     // remove data: prefix
+        resolve(base64Pdf);
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 
     function toBase64(file) {
       return new Promise((resolve, reject) => {
