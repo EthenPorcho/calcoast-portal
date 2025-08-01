@@ -70,68 +70,93 @@
   <p id="status"></p>
 
   <script>
-    const techName = localStorage.getItem("techName");
-    if (!techName) {
-      window.location.href = "login.html";
-      throw new Error("No techName in localStorage");
+  const techName = localStorage.getItem("techName");
+  if (!techName) {
+    window.location.href = "login.html";
+    throw new Error("No techName in localStorage");
+  }
+
+  document.getElementById("greeting").textContent = `Hello, ${techName}!`;
+
+  document.getElementById("submitBtn").addEventListener("click", async () => {
+    const status = document.getElementById("status");
+    const pdfFile = document.getElementById("pdfFile").files[0];
+    const unitPhoto = document.getElementById("unitPhoto").files[0];
+    const dataPlate = document.getElementById("dataPlate").files[0];
+    const miscFile = document.getElementById("miscFile").files[0];
+
+    if (!pdfFile || !unitPhoto || !dataPlate) {
+      status.textContent = "❌ All required files must be selected.";
+      status.style.color = "red";
+      return;
     }
 
-    document.getElementById("greeting").textContent = `Hello, ${techName}!`;
-
-    document.getElementById("submitBtn").addEventListener("click", async () => {
-      const status = document.getElementById("status");
-      const pdfFile = document.getElementById("pdfFile").files[0];
-      const unitPhoto = document.getElementById("unitPhoto").files[0];
-      const dataPlate = document.getElementById("dataPlate").files[0];
-      const miscFile = document.getElementById("miscFile").files[0];
-
-      if (!pdfFile || !unitPhoto || !dataPlate) {
-        status.textContent = "❌ All required files must be selected.";
-        status.style.color = "red";
-        return;
-      }
-
-      const toBase64 = file =>
-        new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result.split(",")[1]);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-
-      try {
-        const payload = {
-          techName,
-          fileContent: await toBase64(pdfFile),
-          unitPhoto: await toBase64(unitPhoto),
-          dataPlate: await toBase64(dataPlate),
-          miscFile: miscFile ? await toBase64(miscFile) : null
+    // Handles image files: converts to JPEG base64
+    const convertImageToJpegBase64 = file =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            const jpegBase64 = canvas.toDataURL("image/jpeg").split(",")[1];
+            resolve(jpegBase64);
+          };
+          img.onerror = reject;
+          img.src = reader.result;
         };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
-        const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/0f2e6fde4bf4482bab06ce6556c78ffa/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=lNoLAlVlKev7QTPYg87MvUcCzVi-jZHAvGAuuUXCJHo";
+    const toBase64 = file =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
-        const resp = await fetch(flowUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const text = await resp.text();
+    try {
+      const payload = {
+        techName,
+        fileContent: await toBase64(pdfFile), // PDF stays as-is
+        unitPhoto: await convertImageToJpegBase64(unitPhoto),
+        dataPlate: await convertImageToJpegBase64(dataPlate),
+        miscFile: miscFile
+          ? miscFile.type.startsWith("image/")
+            ? await convertImageToJpegBase64(miscFile)
+            : await toBase64(miscFile)
+          : null
+      };
 
-        if (resp.ok) {
-          status.textContent = "✅ Form submitted successfully!";
-          status.style.color = "green";
-          document.querySelectorAll('input[type="file"]').forEach(input => input.value = "");
-        } else {
-          status.textContent = `❌ ${resp.status}: ${text}`;
-          status.style.color = "red";
-        }
-        console.log("Response:", resp.status, text);
-      } catch (err) {
-        console.error("Error:", err);
-        status.textContent = `❌ ${err.message}`;
+      const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/0f2e6fde4bf4482bab06ce6556c78ffa/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=lNoLAlVlKev7QTPYg87MvUcCzVi-jZHAvGAuuUXCJHo";
+
+      const resp = await fetch(flowUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const text = await resp.text();
+
+      if (resp.ok) {
+        status.textContent = "✅ Form submitted successfully!";
+        status.style.color = "green";
+        document.querySelectorAll('input[type="file"]').forEach(input => input.value = "");
+      } else {
+        status.textContent = `❌ ${resp.status}: ${text}`;
         status.style.color = "red";
       }
-    });
-  </script>
-</body>
-</html>
+      console.log("Response:", resp.status, text);
+    } catch (err) {
+      console.error("Error:", err);
+      status.textContent = `❌ ${err.message}`;
+      status.style.color = "red";
+    }
+  });
+</script>
+
