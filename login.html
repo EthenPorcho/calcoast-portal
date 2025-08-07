@@ -36,21 +36,32 @@
 
   <script>
     function login() {
-      const name = document.getElementById("techName").value.trim();
-      const email = document.getElementById("techEmail").value.trim();
-      const phone = document.getElementById("techPhone").value.trim();
-      const carrier = document.getElementById("techCarrier").value;
+  const name = document.getElementById("techName").value.trim();
+  const email = document.getElementById("techEmail").value.trim();
+  const phone = document.getElementById("techPhone").value.trim();
+  const carrier = document.getElementById("techCarrier").value;
+    let smsEmail = '';
+  if (carrier === "att") {
+    smsEmail = phone + "@txt.att.net";
+  } else if (carrier === "verizon") {
+    smsEmail = phone + "@vtext.com";
+  } else if (carrier === "tmobile") {
+    smsEmail = phone + "@tmomail.net";
+  } else if (carrier === "sprint") {
+    smsEmail = phone + "@messaging.sprintpcs.com";
+  } // add more carriers if needed
 
-      if (name && email && phone && carrier) {
-        localStorage.setItem("techName", name);
-        localStorage.setItem("techEmail", email);
-        localStorage.setItem("techPhone", phone);
-        localStorage.setItem("techCarrier", carrier);
-        window.location.href = "index.html";
-      } else {
-        alert("Please enter all fields.");
-      }
-    }
+  if (name && email && phone && carrier) {
+    localStorage.setItem("techName", name);
+    localStorage.setItem("techEmail", email);
+    localStorage.setItem("techPhone", phone);
+    localStorage.setItem("techCarrier", carrier);
+    localStorage.setItem("techSmsEmail", smsEmail);
+    window.location.href = "index.html";
+  } else {
+    alert("Please enter all fields.");
+  }
+}
   </script>
 </body>
 </html>
