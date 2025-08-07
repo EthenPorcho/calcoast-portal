@@ -55,7 +55,7 @@
   <br />
   <button class="button" id="submitBtn">Submit Form</button>
   <p id="status"></p>
-
+<script>
   // 1) Ensure technician is logged in
 const techName = localStorage.getItem("techName");
 const techEmail = localStorage.getItem("techEmail");
@@ -125,8 +125,8 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
     status.textContent = "❌ Failed to read file.";
     status.style.color = "red";
     console.error(e);
-  };
-});
+    };
+  });
   </script>
 </body>
 </html>
