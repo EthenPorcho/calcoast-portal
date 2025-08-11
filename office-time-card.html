@@ -78,7 +78,7 @@
           pdfExt: ext        // e.g. "pdf"
         };
 
-        const resp = await fetch("FLOW_URL_HERE", {
+        const resp = await fetch("https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/4d8de4e65cab475ab65e755e74de4bfb/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=P1M_vIjzQjcdO42kuzfd_qwfQf5GtE8Sf49dxhzk-AY", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
