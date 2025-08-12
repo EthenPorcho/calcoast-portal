@@ -48,75 +48,81 @@
     <p id="status"></p>
   </div>
 
-  <script>
-    // Retrieve tech info from localStorage
-    const techName  = localStorage.getItem("techName");
-    const techEmail = localStorage.getItem("techEmail");
-    const techPhone = localStorage.getItem("techPhone");
+ <script>
+  // Retrieve tech info from localStorage
+  const techName  = localStorage.getItem("techName");
+  const techEmail = localStorage.getItem("techEmail");
+  const techPhone = localStorage.getItem("techPhone");
 
-    if (!techName || !techEmail || !techPhone) {
-      window.location.href = "login.html";
-      throw new Error("Technician not logged in");
+  if (!techName || !techEmail || !techPhone) {
+    window.location.href = "login.html";
+    throw new Error("Technician not logged in");
+  }
+
+  document.getElementById("greeting").textContent = `Hello, ${techName}!`;
+
+  // helper: convert file to base64 string
+  const toBase64 = file => new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => {
+      // remove the "data:...;base64," prefix
+      const base64 = String(r.result).split(",")[1] || "";
+      resolve(base64);
+    };
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+
+  document.getElementById("submitBtn").addEventListener("click", async () => {
+    const status = document.getElementById("status");
+    const pdfFile   = document.getElementById("pdfFile").files[0];
+    const unitPhoto = document.getElementById("unitPhoto").files[0];
+    const dataPlate = document.getElementById("dataPlate").files[0];
+    const miscFile  = document.getElementById("miscFile").files[0];
+
+    if (!pdfFile || !unitPhoto || !dataPlate) {
+      status.textContent = "❌ All required files must be selected.";
+      status.style.color = "red";
+      return;
     }
 
-    document.getElementById("greeting").textContent = `Hello, ${techName}!`;
+    status.textContent = "Uploading…";
+    status.style.color = "#333";
+    document.getElementById("submitBtn").disabled = true;
 
-    // Your flow endpoint
-    const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eacc8ddf9c914016a1a6c02f8003d618/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=u1sXRVYWjVQioTas_fnaSpwZzdZWGohIc3lEG1ru3UI";
+    try {
+      const payload = {
+        techName,
+        techEmail,
+        techPhone,
+        fileContent: await toBase64(pdfFile),
+        unitPhoto:   await toBase64(unitPhoto),
+        dataPlate:   await toBase64(dataPlate),
+        miscFile:    miscFile ? await toBase64(miscFile) : null
+      };
 
-    document.getElementById("submitBtn").addEventListener("click", async () => {
-      const status = document.getElementById("status");
-      const pdfFile   = document.getElementById("pdfFile").files[0];
-      const unitPhoto = document.getElementById("unitPhoto").files[0];
-      const dataPlate = document.getElementById("dataPlate").files[0];
-      const miscFile  = document.getElementById("miscFile").files[0];
+      const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eacc8ddf9c914016a1a6c02f8003d618/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=u1sXRVYWjVQioTas_fnaSpwZzdZWGohIc3lEG1ru3UI";
 
-      if (!pdfFile || !unitPhoto || !dataPlate) {
-        status.textContent = "❌ All required files must be selected.";
+      const resp = await fetch(flowUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const text = await resp.text();
+      if (resp.ok) {
+        status.textContent = "✅ Form submitted successfully!";
+        status.style.color = "green";
+        document.querySelectorAll('input[type="file"]').forEach(i => i.value = "");
+      } else {
+        status.textContent = `❌ ${resp.status}: ${text}`;
         status.style.color = "red";
-        return;
       }
-
-      status.textContent = "Uploading…";
-      status.style.color = "#333";
-      document.getElementById("submitBtn").disabled = true;
-
-      try {
-        // Build multipart/form-data payload
-        const form = new FormData();
-        // Text fields
-        form.append("techName", techName);
-        form.append("techEmail", techEmail);
-        form.append("techPhone", techPhone);
-
-        // File parts (field names kept the same as before)
-        form.append("fileContent", pdfFile, pdfFile.name);     // service repair PDF
-        form.append("unitPhoto",   unitPhoto, unitPhoto.name); // unit photo
-        form.append("dataPlate",   dataPlate, dataPlate.name); // data plate
-        if (miscFile) form.append("miscFile", miscFile, miscFile.name);
-
-        // Don't set Content-Type yourself — the browser will add the correct boundary.
-        const resp = await fetch(flowUrl, {
-          method: "POST",
-          body: form
-        });
-
-        const text = await resp.text();
-        if (resp.ok) {
-          status.textContent = "✅ Form submitted successfully!";
-          status.style.color = "green";
-          document.querySelectorAll('input[type="file"]').forEach(i => i.value = "");
-        } else {
-          status.textContent = `❌ ${resp.status}: ${text}`;
-          status.style.color = "red";
-        }
-      } catch (err) {
-        status.textContent = `❌ ${err.message}`;
-        status.style.color = "red";
-      } finally {
-        document.getElementById("submitBtn").disabled = false;
-      }
-    });
-  </script>
-</body>
-</html>
+    } catch (err) {
+      status.textContent = `❌ ${err.message}`;
+      status.style.color = "red";
+    } finally {
+      document.getElementById("submitBtn").disabled = false;
+    }
+  });
+</script>
