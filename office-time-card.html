@@ -34,6 +34,7 @@
   <script>
     // Require techName from prior login page
     const techName = localStorage.getItem("techName");
+    const techEmail = localStorage.getItem("techEmail");
     if (!techName) {
       window.location.href = "login.html";
       throw new Error("No techName in localStorage");
@@ -74,6 +75,7 @@
 
         const payload = {
           techName,
+          techEmail,
           pdfFile: base64,   // raw base64 (no data: prefix)
           pdfExt: ext        // e.g. "pdf"
         };
