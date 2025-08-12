@@ -61,12 +61,8 @@
 
     document.getElementById("greeting").textContent = `Hello, ${techName}!`;
 
-    const toBase64 = file => new Promise((resolve, reject) => {
-      const r = new FileReader();
-      r.onload = () => resolve(String(r.result).split(",")[1] || "");
-      r.onerror = reject;
-      r.readAsDataURL(file);
-    });
+    // Your flow endpoint
+    const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eacc8ddf9c914016a1a6c02f8003d618/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=u1sXRVYWjVQioTas_fnaSpwZzdZWGohIc3lEG1ru3UI";
 
     document.getElementById("submitBtn").addEventListener("click", async () => {
       const status = document.getElementById("status");
@@ -86,21 +82,23 @@
       document.getElementById("submitBtn").disabled = true;
 
       try {
-        const payload = {
-          techName,
-          techEmail,
-          techPhone,
-          fileContent: await toBase64(pdfFile),
-          unitPhoto:   await toBase64(unitPhoto),
-          dataPlate:   await toBase64(dataPlate),
-          miscFile:    miscFile ? await toBase64(miscFile) : null
-        };
+        // Build multipart/form-data payload
+        const form = new FormData();
+        // Text fields
+        form.append("techName", techName);
+        form.append("techEmail", techEmail);
+        form.append("techPhone", techPhone);
 
-        const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eacc8ddf9c914016a1a6c02f8003d618/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=u1sXRVYWjVQioTas_fnaSpwZzdZWGohIc3lEG1ru3UI"; // Logic Apps webhook URL
+        // File parts (field names kept the same as before)
+        form.append("fileContent", pdfFile, pdfFile.name);     // service repair PDF
+        form.append("unitPhoto",   unitPhoto, unitPhoto.name); // unit photo
+        form.append("dataPlate",   dataPlate, dataPlate.name); // data plate
+        if (miscFile) form.append("miscFile", miscFile, miscFile.name);
+
+        // Don't set Content-Type yourself — the browser will add the correct boundary.
         const resp = await fetch(flowUrl, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          body: form
         });
 
         const text = await resp.text();
