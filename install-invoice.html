@@ -58,7 +58,6 @@
     window.location.href = "login.html";
     throw new Error("Technician not logged in");
   }
-
   document.getElementById("greeting").textContent = `Hello, ${techName}!`;
 
   const toBase64 = file => new Promise((resolve, reject) => {
@@ -93,6 +92,7 @@
         miscFile ? toBase64(miscFile) : Promise.resolve("")
       ]);
 
+      // Build payload; only include misc fields if a file was actually chosen.
       const payload = {
         formName: FORM_NAME,
         techName,
@@ -101,12 +101,14 @@
         fileContent: pdfB64,
         unitPhoto:   unitB64,
         dataPlate:   plateB64,
-        miscFile:    miscB64 || "",
         fileContentName: pdfFile.name,
         unitPhotoName:   unitFile.name,
-        dataPlateName:   plateFile.name,
-        miscFileName:    miscFile ? miscFile.name : ""
+        dataPlateName:   plateFile.name
       };
+      if (miscFile && miscB64) {
+        payload.miscFile = miscB64;           // Flow: base64ToBinary(triggerBody()?['miscFile'])
+        payload.miscFileName = miscFile.name; // Flow: used in your concat() for the Name
+      }
 
       const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c0d1d852a2e94992bd2e371ce26733e2/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=mlI5AN8BNmm4ME-ce1nW4u8y2KBgGp5kBIQLCvvL7jA";
       const resp = await fetch(flowUrl, {
@@ -134,5 +136,8 @@
     }
   });
 </script>
+</body>
+</html>
+
 </body>
 </html>
