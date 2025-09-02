@@ -40,7 +40,7 @@
     <input type="file" id="dataPlate" accept="image/jpeg,image/png" required />
 
     <label for="miscFile">Miscellaneous (Optional)</label>
-    <input type="file" id="miscFile" accept="*/*" />
+    <input type="file" id="miscFile" accept="application/pdf,image/jpeg,image/png" />
 
     <div class="actions">
       <button class="button" id="submitBtn">Submit Form</button>
@@ -49,7 +49,7 @@
   </div>
 
 <script>
-  const FORM_NAME = "Install Invoice";
+  // Pull tech info from login step
   const techName  = localStorage.getItem("techName");
   const techEmail = localStorage.getItem("techEmail");
   const techPhone = localStorage.getItem("techPhone");
@@ -58,8 +58,10 @@
     window.location.href = "login.html";
     throw new Error("Technician not logged in");
   }
+
   document.getElementById("greeting").textContent = `Hello, ${techName}!`;
 
+  // Read a File object as a base64 string (no data: prefix)
   const toBase64 = file => new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(String(r.result).split(",")[1] || "");
@@ -68,13 +70,13 @@
   });
 
   document.getElementById("submitBtn").addEventListener("click", async () => {
-    const status   = document.getElementById("status");
-    const pdfFile  = document.getElementById("pdfFile").files[0];
-    const unitFile = document.getElementById("unitPhoto").files[0];
-    const plateFile= document.getElementById("dataPlate").files[0];
-    const miscFile = document.getElementById("miscFile").files[0];
+    const status    = document.getElementById("status");
+    const pdfFile   = document.getElementById("pdfFile").files[0];
+    const unitPhoto = document.getElementById("unitPhoto").files[0];
+    const dataPlate = document.getElementById("dataPlate").files[0];
+    const miscFile  = document.getElementById("miscFile").files[0];
 
-    if (!pdfFile || !unitFile || !plateFile) {
+    if (!pdfFile || !unitPhoto || !dataPlate) {
       status.textContent = "❌ All required files must be selected.";
       status.style.color = "red";
       return;
@@ -87,28 +89,24 @@
     try {
       const [pdfB64, unitB64, plateB64, miscB64] = await Promise.all([
         toBase64(pdfFile),
-        toBase64(unitFile),
-        toBase64(plateFile),
-        miscFile ? toBase64(miscFile) : Promise.resolve("")
+        toBase64(unitPhoto),
+        toBase64(dataPlate),
+        miscFile ? toBase64(miscFile) : Promise.resolve(null)
       ]);
 
-      // Build payload; only include misc fields if a file was actually chosen.
       const payload = {
-        formName: FORM_NAME,
         techName,
         techEmail,
         techPhone,
         fileContent: pdfB64,
         unitPhoto:   unitB64,
         dataPlate:   plateB64,
+        miscFile:    miscB64, // null when not provided
         fileContentName: pdfFile.name,
-        unitPhotoName:   unitFile.name,
-        dataPlateName:   plateFile.name
+        unitPhotoName:   unitPhoto.name,
+        dataPlateName:   dataPlate.name,
+        miscFileName:    miscFile ? miscFile.name : null
       };
-      if (miscFile && miscB64) {
-        payload.miscFile = miscB64;           // Flow: base64ToBinary(triggerBody()?['miscFile'])
-        payload.miscFileName = miscFile.name; // Flow: used in your concat() for the Name
-      }
 
       const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c0d1d852a2e94992bd2e371ce26733e2/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=mlI5AN8BNmm4ME-ce1nW4u8y2KBgGp5kBIQLCvvL7jA";
       const resp = await fetch(flowUrl, {
@@ -136,8 +134,5 @@
     }
   });
 </script>
-</body>
-</html>
-
 </body>
 </html>
