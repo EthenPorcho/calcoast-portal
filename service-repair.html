@@ -46,12 +46,12 @@
 
     <div style="margin-top:18px;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="margin:0;">Misc Photos (Optional)</h3>
-        <button class="button" id="addMiscBtn" type="button">Add another photo</button>
+        <h3 style="margin:0;">Misc Files (Optional)</h3>
+        <button class="button" id="addMiscBtn" type="button">Add another file</button>
       </div>
-      <div class="muted" id="miscCounter">0 / 20</div>
+      <div class="muted" id="miscCounter">0 / 10</div>
       <div id="miscContainer"></div>
-      <div class="hint">Add up to 20 separate photo slots. Each slot accepts one image (JPG/PNG).</div>
+      <div class="hint">Add up to 10 slots. Each slot accepts one file (PDF, JPG/PNG, or MP4/WebM/MOV).</div>
     </div>
 
     <div class="actions">
@@ -71,8 +71,8 @@
   }
   document.getElementById("greeting").textContent = `Hello, ${techName}!`;
 
-  // --- misc slots UI (array-based) ---
-  const MAX_MISC = 20;
+  // --- misc slots UI (fixed max = 10; one file per slot) ---
+  const MAX_MISC = 10;
   const miscContainer = document.getElementById("miscContainer");
   const addMiscBtn = document.getElementById("addMiscBtn");
   const miscCounter = document.getElementById("miscCounter");
@@ -91,14 +91,14 @@
     row.className = "misc-row";
 
     const label = document.createElement("label");
-    label.textContent = `Photo ${idx}`;
+    label.textContent = `File ${idx}`;
     label.setAttribute("for", `miscFile_${idx}`);
 
     const input = document.createElement("input");
     input.type = "file";
     input.id = `miscFile_${idx}`;
     input.name = `miscFile_${idx}`;
-    input.accept = "image/jpeg,image/png";
+    input.accept = "application/pdf,image/jpeg,image/png,video/mp4,video/webm,video/quicktime";
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
@@ -106,11 +106,11 @@
     removeBtn.textContent = "Remove";
     removeBtn.addEventListener("click", () => {
       row.remove();
-      // re-number so Photo N matches field order
+      // re-number so File N matches field order
       [...miscContainer.querySelectorAll(".misc-row")].forEach((r, i) => {
         const lab = r.querySelector("label");
         const inp = r.querySelector('input[type="file"]');
-        lab.textContent = `Photo ${i + 1}`;
+        lab.textContent = `File ${i + 1}`;
         lab.setAttribute("for", `miscFile_${i + 1}`);
         inp.id = `miscFile_${i + 1}`;
         inp.name = `miscFile_${i + 1}`;
@@ -165,21 +165,31 @@
         toBase64(dataPlate)
       ]);
 
-      // Collect misc photos → [{name, contentBase64, contentType}]
-      const misc = [];
+      // Gather up to 10 misc files in order of the slots
+      const picked = [];
       const inputs = [...miscContainer.querySelectorAll('input[type="file"]')];
       for (const inp of inputs) {
         const f = inp.files?.[0];
         if (!f) continue;
-        const b64 = await toBase64(f);
-        misc.push({
-          name: f.name,
-          contentBase64: b64,
-          contentType: f.type || ""
-        });
+        picked.push({ file: f, base64: await toBase64(f) });
+        if (picked.length >= MAX_MISC) break;
       }
 
-      // Send the misc list as a JSON STRING on purpose (miscFilesJson)
+      // Build fixed payload fields misc1..misc10 (null if unused)
+      const miscFields = {};
+      for (let i = 0; i < MAX_MISC; i++) {
+        const idx = i + 1;
+        if (picked[i]) {
+          miscFields[`misc${idx}Name`]        = picked[i].file.name;
+          miscFields[`misc${idx}Base64`]      = picked[i].base64;
+          miscFields[`misc${idx}ContentType`] = picked[i].file.type || "";
+        } else {
+          miscFields[`misc${idx}Name`]        = null;
+          miscFields[`misc${idx}Base64`]      = null;
+          miscFields[`misc${idx}ContentType`] = null;
+        }
+      }
+
       const payload = {
         techName,
         techEmail,
@@ -190,9 +200,10 @@
         unitPhotoName: unitPhoto.name,
         dataPlate: plateB64,
         dataPlateName: dataPlate.name,
-        miscFilesJson: JSON.stringify(misc)   // <-- rock-solid
+        ...miscFields
       };
 
+      // Flow URL
       const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eacc8ddf9c914016a1a6c02f8003d618/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=u1sXRVYWjVQioTas_fnaSpwZzdZWGohIc3lEG1ru3UI";
 
       const resp = await fetch(flowUrl, {
@@ -203,8 +214,8 @@
 
       const text = await resp.text();
       if (resp.ok) {
-        const miscCount = misc.length;
-        statusEl.textContent = `✅ Form submitted successfully! (${miscCount} misc photo${miscCount===1?"":"s"} included)`;
+        const miscCount = picked.length;
+        statusEl.textContent = `✅ Form submitted successfully! (${miscCount} misc file${miscCount===1?"":"s"} included)`;
         statusEl.style.color = "green";
         // reset
         document.querySelectorAll('input[type="file"]').forEach(i => i.value = "");
@@ -227,3 +238,4 @@
 </script>
 </body>
 </html>
+
