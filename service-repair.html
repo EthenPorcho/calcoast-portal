@@ -71,7 +71,7 @@
   }
   document.getElementById("greeting").textContent = `Hello, ${techName}!`;
 
-  // --- misc slots UI ---
+  // --- misc slots UI (array-based) ---
   const MAX_MISC = 20;
   const miscContainer = document.getElementById("miscContainer");
   const addMiscBtn = document.getElementById("addMiscBtn");
@@ -165,7 +165,17 @@
         toBase64(dataPlate)
       ]);
 
-      // base payload
+      // Collect misc photos into ONE ARRAY → [{name, base64}]
+      const miscFiles = [];
+      const inputs = [...miscContainer.querySelectorAll('input[type="file"]')];
+      for (const inp of inputs) {
+        const f = inp.files?.[0];
+        if (!f) continue;
+        const b64 = await toBase64(f);
+        miscFiles.push({ name: f.name, base64: b64 });
+      }
+
+      // payload with miscFiles array
       const payload = {
         techName,
         techEmail,
@@ -175,21 +185,11 @@
         unitPhoto: unitB64,
         unitPhotoName: unitPhoto.name,
         dataPlate: plateB64,
-        dataPlateName: dataPlate.name
+        dataPlateName: dataPlate.name,
+        miscFiles
       };
 
-      // map misc1..misc20 (no arrays)
-      const inputs = [...miscContainer.querySelectorAll('input[type="file"]')];
-      for (let i = 0; i < Math.min(inputs.length, MAX_MISC); i++) {
-        const f = inputs[i].files[0];
-        if (!f) continue;
-        const b64 = await toBase64(f);
-        const n = i + 1;
-        payload[`misc${n}`] = b64;          // base64
-        payload[`misc${n}Name`] = f.name;   // filename
-      }
-
-      // YOUR live flow URL:
+      // Flow URL (HTTP Request trigger expecting 'miscFiles' array)
       const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eacc8ddf9c914016a1a6c02f8003d618/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=u1sXRVYWjVQioTas_fnaSpwZzdZWGohIc3lEG1ru3UI";
 
       const resp = await fetch(flowUrl, {
@@ -200,8 +200,8 @@
 
       const text = await resp.text();
       if (resp.ok) {
-        const sentCount = Object.keys(payload).filter(k => /^misc\d+$/.test(k)).length;
-        statusEl.textContent = `✅ Form submitted successfully! (${sentCount} misc file${sentCount===1?"":"s"} sent separately)`;
+        const miscCount = miscFiles.length;
+        statusEl.textContent = `✅ Form submitted successfully! (${miscCount} misc photo${miscCount===1?"":"s"} included)`;
         statusEl.style.color = "green";
         // reset
         document.querySelectorAll('input[type="file"]').forEach(i => i.value = "");
