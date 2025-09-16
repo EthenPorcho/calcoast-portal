@@ -165,21 +165,21 @@
         toBase64(dataPlate)
       ]);
 
-      // Collect misc photos into ONE ARRAY → [{name, contentBase64, contentType}]
-      const miscFiles = [];
+      // Collect misc photos → [{name, contentBase64, contentType}]
+      const misc = [];
       const inputs = [...miscContainer.querySelectorAll('input[type="file"]')];
       for (const inp of inputs) {
         const f = inp.files?.[0];
         if (!f) continue;
         const b64 = await toBase64(f);
-        miscFiles.push({
+        misc.push({
           name: f.name,
-          contentBase64: b64,   // matches Flow schema
+          contentBase64: b64,
           contentType: f.type || ""
         });
-      } // <-- closed the loop that was previously left open
+      }
 
-      // payload with miscFiles array
+      // Send the misc list as a JSON STRING on purpose (miscFilesJson)
       const payload = {
         techName,
         techEmail,
@@ -190,10 +190,9 @@
         unitPhotoName: unitPhoto.name,
         dataPlate: plateB64,
         dataPlateName: dataPlate.name,
-        miscFiles
+        miscFilesJson: JSON.stringify(misc)   // <-- rock-solid
       };
 
-      // Flow URL (HTTP Request trigger expecting 'miscFiles' array)
       const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eacc8ddf9c914016a1a6c02f8003d618/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=u1sXRVYWjVQioTas_fnaSpwZzdZWGohIc3lEG1ru3UI";
 
       const resp = await fetch(flowUrl, {
@@ -204,7 +203,7 @@
 
       const text = await resp.text();
       if (resp.ok) {
-        const miscCount = miscFiles.length;
+        const miscCount = misc.length;
         statusEl.textContent = `✅ Form submitted successfully! (${miscCount} misc photo${miscCount===1?"":"s"} included)`;
         statusEl.style.color = "green";
         // reset
