@@ -18,6 +18,10 @@
     .actions { margin-top:18px; text-align:center; }
     #status { margin-top:12px; font-size:16px; }
     .hint { font-size:12px; color:#666; margin-top:4px; }
+    .misc-row { display:flex; align-items:center; gap:8px; margin-top:10px; }
+    .misc-row label { margin:0; min-width:120px; }
+    .link { background:none; border:0; color:#c1121f; cursor:pointer; font-weight:600; }
+    .muted { color:#666; font-size:12px; margin-top:6px; }
   </style>
 </head>
 <body>
@@ -40,14 +44,15 @@
     <label for="dataPlate">Input Data Plate (Required)</label>
     <input type="file" id="dataPlate" accept="image/jpeg,image/png" required />
 
-    <label for="miscFile">Miscellaneous (Optional)</label>
-    <input
-      type="file"
-      id="miscFile"
-      accept="application/pdf,image/jpeg,image/png,video/mp4,video/webm,video/quicktime"
-      multiple
-    />
-    <div class="hint">You can select multiple files (PDFs, images, or videos). Hold Ctrl/Cmd while clicking to select more than one.</div>
+    <div style="margin-top:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0;">Misc Photos (Optional)</h3>
+        <button class="button" id="addMiscBtn" type="button">Add another photo</button>
+      </div>
+      <div class="muted" id="miscCounter">0 / 20</div>
+      <div id="miscContainer"></div>
+      <div class="hint">Add up to 20 separate photo slots. Each slot accepts one image (JPG/PNG).</div>
+    </div>
 
     <div class="actions">
       <button class="button" id="submitBtn">Submit Form</button>
@@ -56,34 +61,91 @@
   </div>
 
 <script>
+  // --- login guard ---
   const techName  = localStorage.getItem("techName");
   const techEmail = localStorage.getItem("techEmail");
   const techPhone = localStorage.getItem("techPhone");
-
   if (!techName || !techEmail || !techPhone) {
     window.location.href = "login.html";
     throw new Error("Technician not logged in");
   }
-
   document.getElementById("greeting").textContent = `Hello, ${techName}!`;
 
+  // --- misc slots UI ---
+  const MAX_MISC = 20;
+  const miscContainer = document.getElementById("miscContainer");
+  const addMiscBtn = document.getElementById("addMiscBtn");
+  const miscCounter = document.getElementById("miscCounter");
+
+  const updateMiscCounter = () => {
+    const count = miscContainer.querySelectorAll(".misc-row").length;
+    miscCounter.textContent = `${count} / ${MAX_MISC}`;
+    addMiscBtn.disabled = count >= MAX_MISC;
+  };
+
+  const addMiscInput = () => {
+    const idx = miscContainer.querySelectorAll(".misc-row").length + 1;
+    if (idx > MAX_MISC) return;
+
+    const row = document.createElement("div");
+    row.className = "misc-row";
+
+    const label = document.createElement("label");
+    label.textContent = `Photo ${idx}`;
+    label.setAttribute("for", `miscFile_${idx}`);
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.id = `miscFile_${idx}`;
+    input.name = `miscFile_${idx}`;
+    input.accept = "image/jpeg,image/png";
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "link";
+    removeBtn.textContent = "Remove";
+    removeBtn.addEventListener("click", () => {
+      row.remove();
+      // re-number so Photo N matches field order
+      [...miscContainer.querySelectorAll(".misc-row")].forEach((r, i) => {
+        const lab = r.querySelector("label");
+        const inp = r.querySelector('input[type="file"]');
+        lab.textContent = `Photo ${i + 1}`;
+        lab.setAttribute("for", `miscFile_${i + 1}`);
+        inp.id = `miscFile_${i + 1}`;
+        inp.name = `miscFile_${i + 1}`;
+      });
+      updateMiscCounter();
+    });
+
+    row.appendChild(label);
+    row.appendChild(input);
+    row.appendChild(removeBtn);
+    miscContainer.appendChild(row);
+    updateMiscCounter();
+  };
+
+  addMiscBtn.addEventListener("click", addMiscInput);
+  updateMiscCounter();
+
+  // --- helpers ---
   const toBase64 = file => new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => {
-      const result = String(r.result);
-      const comma = result.indexOf(",");
-      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+      const s = String(r.result);
+      const i = s.indexOf(",");
+      resolve(i >= 0 ? s.slice(i + 1) : s);
     };
     r.onerror = reject;
     r.readAsDataURL(file);
   });
 
+  // --- submit ---
   document.getElementById("submitBtn").addEventListener("click", async () => {
     const statusEl = document.getElementById("status");
     const pdfFile   = document.getElementById("pdfFile").files[0];
     const unitPhoto = document.getElementById("unitPhoto").files[0];
     const dataPlate = document.getElementById("dataPlate").files[0];
-    const miscList  = document.getElementById("miscFile").files;
 
     if (!pdfFile || !unitPhoto || !dataPlate) {
       statusEl.textContent = "❌ All required files must be selected.";
@@ -94,36 +156,40 @@
     statusEl.textContent = "Uploading…";
     statusEl.style.color = "#333";
     document.getElementById("submitBtn").disabled = true;
+    addMiscBtn.disabled = true;
 
     try {
-      // Base64 for required files
       const [pdfB64, unitB64, plateB64] = await Promise.all([
         toBase64(pdfFile),
         toBase64(unitPhoto),
         toBase64(dataPlate)
       ]);
 
-      // Base64 for all misc files (array of { name, base64 })
-      const miscFiles = [];
-      for (const f of miscList) {
-        const b64 = await toBase64(f);
-        miscFiles.push({ name: f.name, base64: b64 });
-      }
-
+      // base payload
       const payload = {
         techName,
         techEmail,
         techPhone,
         fileContent: pdfB64,
-        unitPhoto:   unitB64,
-        dataPlate:   plateB64,
         fileContentName: pdfFile.name,
-        unitPhotoName:   unitPhoto.name,
-        dataPlateName:   dataPlate.name,
-        // send ONLY base64 for misc
-        miscFiles
+        unitPhoto: unitB64,
+        unitPhotoName: unitPhoto.name,
+        dataPlate: plateB64,
+        dataPlateName: dataPlate.name
       };
 
+      // map misc1..misc20 (no arrays)
+      const inputs = [...miscContainer.querySelectorAll('input[type="file"]')];
+      for (let i = 0; i < Math.min(inputs.length, MAX_MISC); i++) {
+        const f = inputs[i].files[0];
+        if (!f) continue;
+        const b64 = await toBase64(f);
+        const n = i + 1;
+        payload[`misc${n}`] = b64;          // base64
+        payload[`misc${n}Name`] = f.name;   // filename
+      }
+
+      // YOUR live flow URL:
       const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eacc8ddf9c914016a1a6c02f8003d618/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=u1sXRVYWjVQioTas_fnaSpwZzdZWGohIc3lEG1ru3UI";
 
       const resp = await fetch(flowUrl, {
@@ -134,10 +200,13 @@
 
       const text = await resp.text();
       if (resp.ok) {
-        const miscCount = miscFiles.length;
-        statusEl.textContent = `✅ Form submitted successfully! (${miscCount} misc file${miscCount===1?"":"s"} included)`;
+        const sentCount = Object.keys(payload).filter(k => /^misc\d+$/.test(k)).length;
+        statusEl.textContent = `✅ Form submitted successfully! (${sentCount} misc file${sentCount===1?"":"s"} sent separately)`;
         statusEl.style.color = "green";
+        // reset
         document.querySelectorAll('input[type="file"]').forEach(i => i.value = "");
+        miscContainer.innerHTML = "";
+        updateMiscCounter();
       } else {
         statusEl.textContent = `❌ ${resp.status}: ${text}`;
         statusEl.style.color = "red";
@@ -149,6 +218,7 @@
       console.error(err);
     } finally {
       document.getElementById("submitBtn").disabled = false;
+      addMiscBtn.disabled = miscContainer.querySelectorAll(".misc-row").length >= MAX_MISC;
     }
   });
 </script>
