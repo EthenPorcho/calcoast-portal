@@ -55,7 +55,7 @@
     </div>
 
     <div class="actions">
-      <button class="button" id="submitBtn">Submit Form</button>
+      <button class="button" id="submitBtn" type="button">Submit Form</button>
     </div>
     <p id="status"></p>
   </div>
@@ -165,7 +165,7 @@
         toBase64(dataPlate)
       ]);
 
-      // Collect misc photos into ONE ARRAY → [{name, base64}]
+      // Collect misc photos into ONE ARRAY → [{name, contentBase64, contentType}]
       const miscFiles = [];
       const inputs = [...miscContainer.querySelectorAll('input[type="file"]')];
       for (const inp of inputs) {
@@ -173,11 +173,11 @@
         if (!f) continue;
         const b64 = await toBase64(f);
         miscFiles.push({
-  name: f.name,
-  contentBase64: b64,   // <-- use this key to match schema
-  contentType: f.type || ""
-});
-
+          name: f.name,
+          contentBase64: b64,   // matches Flow schema
+          contentType: f.type || ""
+        });
+      } // <-- closed the loop that was previously left open
 
       // payload with miscFiles array
       const payload = {
