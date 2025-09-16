@@ -83,7 +83,7 @@
     const pdfFile   = document.getElementById("pdfFile").files[0];
     const unitPhoto = document.getElementById("unitPhoto").files[0];
     const dataPlate = document.getElementById("dataPlate").files[0];
-    const miscList  = document.getElementById("miscFile").files; // FileList (0..N)
+    const miscList  = document.getElementById("miscFile").files;
 
     if (!pdfFile || !unitPhoto || !dataPlate) {
       statusEl.textContent = "❌ All required files must be selected.";
@@ -96,48 +96,32 @@
     document.getElementById("submitBtn").disabled = true;
 
     try {
-      // Base64 for requireds
+      // Base64 for required files
       const [pdfB64, unitB64, plateB64] = await Promise.all([
         toBase64(pdfFile),
         toBase64(unitPhoto),
         toBase64(dataPlate)
       ]);
 
-      // Base64 for unlimited misc files
-      const miscFilesArray = [];
-      for (let i = 0; i < miscList.length; i++) {
-        const f = miscList[i];
-        const contentB64 = await toBase64(f);
-        miscFilesArray.push({
-          name: f.name,
-          contentType: f.type || "",
-          contentBase64: contentB64
-        });
+      // Base64 for all misc files (array of { name, base64 })
+      const miscFiles = [];
+      for (const f of miscList) {
+        const b64 = await toBase64(f);
+        miscFiles.push({ name: f.name, base64: b64 });
       }
-
-      // Back-compat simple arrays if your Flow currently expects these:
-      const miscB64Array  = miscFilesArray.map(x => x.contentBase64);
-      const miscNameArray = miscFilesArray.map(x => x.name);
 
       const payload = {
         techName,
         techEmail,
         techPhone,
-
-        // requireds
         fileContent: pdfB64,
         unitPhoto:   unitB64,
         dataPlate:   plateB64,
         fileContentName: pdfFile.name,
         unitPhotoName:   unitPhoto.name,
         dataPlateName:   dataPlate.name,
-
-        // new structured misc array
-        miscFiles: miscFilesArray,
-
-        // (optional) legacy arrays for existing flows
-        miscFileNames: miscNameArray,
-        miscFileContents: miscB64Array
+        // send ONLY base64 for misc
+        miscFiles
       };
 
       const flowUrl = "https://default3afc8fb9498b4895ac67ceb1617a23.ce.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eacc8ddf9c914016a1a6c02f8003d618/triggers/manual/paths/invoke/?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=u1sXRVYWjVQioTas_fnaSpwZzdZWGohIc3lEG1ru3UI";
@@ -150,7 +134,7 @@
 
       const text = await resp.text();
       if (resp.ok) {
-        const miscCount = miscFilesArray.length;
+        const miscCount = miscFiles.length;
         statusEl.textContent = `✅ Form submitted successfully! (${miscCount} misc file${miscCount===1?"":"s"} included)`;
         statusEl.style.color = "green";
         document.querySelectorAll('input[type="file"]').forEach(i => i.value = "");
