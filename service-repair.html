@@ -172,8 +172,12 @@
         const f = inp.files?.[0];
         if (!f) continue;
         const b64 = await toBase64(f);
-        miscFiles.push({ name: f.name, base64: b64 });
-      }
+        miscFiles.push({
+  name: f.name,
+  contentBase64: b64,   // <-- use this key to match schema
+  contentType: f.type || ""
+});
+
 
       // payload with miscFiles array
       const payload = {
